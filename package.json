@@ -1,0 +1,15 @@
+{
+  "name": "amigo",
+  "version": "1.0.0",
+  "description": "Best pal",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "BCS",
+  "license": "MIT",
+  "dependencies": {
+    "fs-jetpack": "^2.1.0",
+    "sgsg": "^0.9.56"
+  }
+}

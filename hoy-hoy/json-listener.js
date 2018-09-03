@@ -8,8 +8,8 @@ const _                       = sg._;
 const http                    = require('http');
 const urlLib                  = require('url');
 const jsonQueue               = require('./json-stream-http-queue');
-const {
-  sendJson }                  = jsonQueue;
+// const {
+//   streamJson }                  = jsonQueue;
 
 
 var lib = {};
@@ -19,10 +19,10 @@ var lib = {};
  *
  *
  */
-const streamJson = function(streamName, json, callback) {
+const streamJson = function(streamName, data, callback) {
 
-  console.log(`Sending streamJson to the %{streamName} event queue`);
-  return sendJson({queueName: streamName, json}, {}, function(err, receipt) {
+  console.log(`Sending streamJson to the ${streamName} event queue`);
+  return jsonQueue.streamJson({streamName, data}, {}, function(err, receipt) {
     // The json sender response
 
     return callback(err, receipt);
@@ -49,6 +49,8 @@ exports.listen = function(amigos, playground, callback) {
       const url         = urlLib.parse(req.url, true);
       const query       = url.query;
       const bodyJson    = req.bodyJson || {};
+
+      console.log(`Main JSON listener:`, {query, bodyJson});
 
       // Build an object that has oll of the data
       const all   = _.extend({}, bodyJson || {}, query);

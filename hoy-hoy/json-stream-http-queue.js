@@ -4,7 +4,7 @@
  *  Amigos. Other modules send data, which gets streamed to the clients.
  *
  */
-
+const sg                      = require('sgsg');
 const _                       = require('underscore');
 const http                    = require('http');
 const urlLib                  = require('url');
@@ -27,55 +27,58 @@ exports.startJsonStreamServer = function(argv, context, callback) {
     req.setTimeout(0);
     res.setTimeout(0);
 
-    // Figure out what the requetor wants
-    const url         = urlLib.parse(req.url, true);
-    const query       = url.query || {};
-    const queueName   = url.pathname;
+    return sg.getBody(req, function() {
 
-    // Get the object stored for that queue
-    const pipeState   = data[queueName] = data[queueName] || [];
+      // Figure out what the requetor wants
+      const url         = urlLib.parse(req.url, true);
+      const query       = url.query || {};
+      const streamName  = url.pathname;
 
-    // What we do now depends on what was stored
-    if (_.isArray(pipeState) && pipeState.length > 0) {
+      // Get the object stored for that queue
+      const pipeState   = data[streamName] = data[streamName] || [];
 
-      // Data is waiting for us -- just send it back to the request
+      // What we do now depends on what was stored
+      if (_.isArray(pipeState) && pipeState.length > 0) {
 
-      console.log(`Request data from queue: ${queueName}. ${pipeState.length} data items are waiting.`);
+        // Data is waiting for us -- just send it back to the request
 
-      // We have data to respond with... use it
-      res.writeHead(200, { 'Content-Type': 'application/json'});
-      res.write(JSON.stringify(pipeState));
-      res.end();
+        console.log(`Request data from queue: ${streamName}. ${pipeState.length} data items are waiting.`);
 
-      // Put an empty array as the now-current data
-      data[queueName] = [];
+        // We have data to respond with... use it
+        res.writeHead(200, { 'Content-Type': 'application/json'});
+        res.write(JSON.stringify(pipeState));
+        res.end();
 
-    } else if (pipeState.res) {
+        // Put an empty array as the now-current data
+        data[streamName] = [];
 
-      // This one is kind-of weird. We are handling a request for queueName, but
-      // there is already a request for it.  We return an empty list to them, and
-      // put ourselves as the listener for the queue.
-      // console.log(`Replacing someone as the queuedatahandler for ${queueName}`);
+      } else if (pipeState.res) {
 
-      console.warn(`Requesting data from ${queueName}, but there is already a hander.`);
+        // This one is kind-of weird. We are handling a request for streamName, but
+        // there is already a request for it.  We return an empty list to them, and
+        // put ourselves as the listener for the queue.
+        // console.log(`Replacing someone as the queuedatahandler for ${streamName}`);
 
-      // Someone is already listening... kick them off
-      pipeState.res.writeHead(200, { 'Content-Type': 'application/json'});
-      pipeState.res.write(JSON.stringify(pipeState));
-      pipeState.res.end();
+        console.warn(`Requesting data from ${streamName}, but there is already a hander.`);
 
-      // Put ourselves as the listener
+        // Someone is already listening... kick them off
+        pipeState.res.writeHead(200, { 'Content-Type': 'application/json'});
+        pipeState.res.write(JSON.stringify(pipeState));
+        pipeState.res.end();
 
-      data[queueName] = {req, res};
+        // Put ourselves as the listener
 
-    } else {
+        data[streamName] = {req, res};
 
-      console.log(`No handler or data; setting myself up as the queuedatahandler for ${queueName}`);
+      } else {
 
-      // Just set ourselves as the current listener
-      data[queueName] = {req, res};
-    }
+        console.log(`No handler or data; setting myself up as the queuedatahandler for ${streamName}`);
 
+        // Just set ourselves as the current listener
+        data[streamName] = {req, res};
+      }
+
+    });
   });
 
   // Listen on `port`
@@ -89,22 +92,22 @@ exports.startJsonStreamServer = function(argv, context, callback) {
  *  The function to call to send dato to JSON stream listeners.
  *
  */
-exports.sendJson = function(argv, context, callback) {
+exports.streamJson = function(argv, context, callback) {
 
   // Gets imports
-  const queueName   = argv.queueName;
+  const streamName  = argv.streamName;
   const items       = argv.data || [];
-  const pipeState   = data[queueName] = data[queueName] || [];
+  const pipeState   = data[streamName] = data[streamName] || [];
 
   if (_.isArray(pipeState)) {
 
-    console.log(`Adding data to queue ${queueName}`);
+    console.log(`Adding data to queue ${streamName}`);
 
-    data[queueName] = [...(data[queueName] || []), ...(items || [])];
+    data[streamName] = [...(data[streamName] || []), ...(items || [])];
 
   } else if (pipeState.res) {
 
-    console.log(`sending data to an alredy-waiting request${queueName}`);
+    console.log(`sending data to an alredy-waiting request${streamName}`);
 
     // We have data to respond with, and a waiting request... use it
     const countSent = items.length;
@@ -114,12 +117,12 @@ exports.sendJson = function(argv, context, callback) {
     pipeState.res.end();
 
     // Put an empty arr as the now-current data
-    data[queueName] = [];
+    data[streamName] = [];
 
     return callback(null, {done:true, countSent});
 
   } else {
-    console.error(`Error: Want to sendJson outbound, but cant tell`);
+    console.error(`Error: Want to streamJson outbound, but cant tell`);
   }
 
 };

@@ -1,65 +1,63 @@
 
 /**
+ *  I am Mr. Amigo -- I walk around an try to get everyone involved.
  *
  */
 const sg                      = require('sgsg');
-const _                       = sg._;
-const runner                  = require('./lib/runner').main;
-const http                    = require('http');
-const urlLib                  = require('url');
+const jetpack                 = require('fs-jetpack');
+const home                    = jetpack.cwd(__dirname);
+const Amigo                   = require('./lib/amigo').Amigo;
 
-const ARGV                    = sg.ARGV();
-const argvGet                 = sg.argvGet;
-const argvExtract             = sg.argvExtract;
-const setOnn                  = sg.setOnn;
-const deref                   = sg.deref;
+const mainish = exports.main = function(argv = {}) {
+  const main = async function() {
+    return new Promise(async function(resolve, reject) {
+      // I aint never gonna resolve that Promise :)
 
-var lib = {};
+      var playground  = {};
+      var self        = new Amigo();
 
-const main = function(callback) {
+      // Go around and load all the package.json files
+      var   neighborhood_ = await home.listAsync();
 
+      self.hood = {};
+      for (var i = 0; i < neighborhood_.length; ++i) {
+        const item = neighborhood_[i];
 
-  const hostname = '127.0.0.1';
-  const port = 6789;
+        if (await jetpack.existsAsync(item) === 'dir') {
 
-  const server = http.createServer((req, res) => {
-    // TODO: Maybe use getRawBody since we do not know it will be JSON
-    return sg.getBody(req, function() {
+          const pkgJsonFilename = jetpack.path(item, 'package.json');
+          if (await jetpack.existsAsync(pkgJsonFilename) === 'file') {
 
-      const url     = urlLib.parse(req.url, true);
-      const query   = url.query;
+            const house         = require(jetpack.path(item));
+            const neighbor      = new house.Hello(self, playground);
+            const name          = neighbor.name;
 
-      // The caller must format the input correctly:
-      //
-      //  all = {
-      //    command: 'string',
-      //    args:    ['the', 'args', 'to', 'pass']
-      //  }
-      //
-
-      const all   = _.extend({}, req.bodyJson || {}, query);
-
-      return runner(all, {}, function(err, data) {
-        res.setHeader('Content-Type', 'application/json');
-
-        if (err) {
-          res.statusCode = 400;
-          return res.end('{}');
+            self.hood[name]     = neighbor;
+          }
         }
+      }
 
-        res.statusCode = data.exitCode === 0 ? 200 : 400;
-        res.end(JSON.stringify(data));
+      return sg.until(function(again, last, count, elapsed) {
+        //console.log({count, elapsed});
+
+        if (count < 30) {
+          return again(500);
+        }
+        return last();
+
+
+      }, function done() {
+        return resolve(42);
       });
     });
+  };
+  return main().then(function(result) {
+    console.log('done, success');
+  }).catch(function(err) {
+    console.log({err});
   });
-
-  server.listen(port, hostname, () => {
-    console.log(`Server running at http://${hostname}:${port}/`);
-  });
-
-
 };
 
-
-main();
+// Might as well get going
+mainish();
 

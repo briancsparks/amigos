@@ -8,6 +8,9 @@ const _                       = sg._;
 const runner                  = require('../lib/runner').main;
 const http                    = require('http');
 const urlLib                  = require('url');
+const jsonQueue               = require('./json-stream-http-queue');
+const {
+  sendJson }                  = jsonQueue;
 
 const ARGV                    = sg.ARGV();
 const argvGet                 = sg.argvGet;
@@ -17,8 +20,17 @@ const deref                   = sg.deref;
 
 var lib = {};
 
-const main = exports.Hello = function(amigo, playground) {
+const streamJson = function(streamName, json, callback) {
 
+  return sendJson({queueName: streamName, json}, {}, function(err, receipt) {
+    return callback(err, receipt);
+  });
+};
+
+
+const main = exports.Hello = function(amigos, playground) {
+
+  amigos.amigo.streamJson = streamJson;
 
   const hostname  = '127.0.0.1';
   const jsonPort  = 5766;             /* if you dial JSON on the phone, it is 5766 */
@@ -43,26 +55,34 @@ const main = exports.Hello = function(amigo, playground) {
       //
 
       const all   = _.extend({}, bodyJson || {}, query);
-      const argv  = {all, body: bodyJson, query};
+      const argv  = {all, body: bodyJson, query, pathname: url.pathname};
 
       // Hey, Mr. Data, I just got a big ol chunk of JSON... I knew you would be interested!
-      amogo.mrdata.ingest(argv, respond);
+      amigos.mrdata.ingest(argv, respond);
 
       // You, too Mr. Amigo -- go tell your friends Mr Data has new data
-      amigo.amigo.inform(argv, respond);
+      amigos.amigo.inform(argv);
 
 
       // The responding fn
       function respond(err, data) {
-        res.setHeader('Content-Type', 'application/json');
+        console.log(`hoyhoy respond`, {err, data});
 
-        if (err) {
-          res.statusCode = 400;
-          return res.end('{}');
-        }
+        // res.setHeader('Content-Type', 'application/json');
 
-        res.statusCode = data.exitCode === 0 ? 200 : 400;
-        res.end(JSON.stringify(data));
+        // if (err) {
+        //   res.statusCode = 400;
+        //   return res.end('{}');
+        // }
+
+        // res.statusCode = data.exitCode === 0 ? 200 : 400;
+        // res.end(JSON.stringify(data));
+
+
+
+        res.writeHead(200, { 'Content-Type': 'application/json'});
+        res.write(JSON.stringify(data));
+        res.end();
       };
 
     });
@@ -70,6 +90,11 @@ const main = exports.Hello = function(amigo, playground) {
 
   server.listen(jsonPort, () => {
     console.log(`Server listening for JSON at ${jsonPort}`);
+  });
+
+
+  jsonQueue.startJsonStreamServer({port: 7799}, {}, function(err, startConf) {
+    console.log(`Started json stgream ${startConf.port}`);
   });
 
 

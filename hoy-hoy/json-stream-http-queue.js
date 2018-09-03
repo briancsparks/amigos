@@ -9,21 +9,33 @@ var   data = {};
 exports.sendJson = function(argv, context, callback) {
 
   const queueName   = argv.queueName;
+  const items       = argv.data || [];
   const pipeState   = data[queueName] = data[queueName] || [];
 
   if (_.isArray(pipeState)) {
-    data[queueName] = [...(data[queueName] || []), ...(argv.items || [])];
+
+    console.log(`Adding our data to queue ${queueName}`);
+
+    data[queueName] = [...(data[queueName] || []), ...(items || [])];
 
   } else if (pipeState.res) {
 
-    // We have data to respond with... use it
+    console.log(`sending json, and is a connection waiting ${queueName}`);
+
+    // We have data to respond with, and a waiting request... use it
+    const countSent = items.length;
+
     pipeState.res.writeHead(200, { 'Content-Type': 'application/json'});
-    pipeState.res.write(JSON.stringify(pipeState));
+    pipeState.res.write(JSON.stringify(items));
     pipeState.res.end();
 
     // Put an empty arr as the now-current data
     data[queueName] = [];
 
+    return callback(null, {done:true, countSent});
+
+  } else {
+    console.error(`Error: Want to sendJson outbound, but cant tell`);
   }
 
 };
@@ -45,6 +57,8 @@ exports.startJsonStreamServer = function(argv, context, callback) {
 
     if (_.isArray(pipeState) && pipeState.length > 0) {
 
+      console.log(`There was already data in the queue ${queueName}`);
+
       // We have data to respond with... use it
       res.writeHead(200, { 'Content-Type': 'application/json'});
       res.write(JSON.stringify(pipeState));
@@ -61,9 +75,13 @@ exports.startJsonStreamServer = function(argv, context, callback) {
       pipeState.res.end();
 
       // Put ourselves as the listener
+      console.log(`Replacing someone as the queuedatahandler for ${queueName}`);
+
       data[queueName] = {req, res};
 
     } else {
+
+      console.log(`Setting myself up as the queuedatahandler for ${queueName}`);
 
       // Just set ourselves as the current listener
       data[queueName] = {req, res};
@@ -73,6 +91,7 @@ exports.startJsonStreamServer = function(argv, context, callback) {
 
   server.listen(port, () => {
     console.log(`JSON stream server listening for JSON at ${port}`);
+    return callback(null, {port});
   });
 };
 

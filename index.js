@@ -4,41 +4,58 @@
  *
  */
 const sg                      = require('sgsg');
-const jetpack                 = require('fs-jetpack');
-const home                    = jetpack.cwd(__dirname);
 const Amigo                   = require('./lib/amigo').Amigo;
+const jetpack                 = require('fs-jetpack');
+const jetpackFileLib          = require('./lib/jetpack-file');
+const home                    = jetpack.cwd(__dirname);
+const {
+  jetpackFile
+}                             = jetpackFileLib;
+
+const mrDataDir               = home.cwd('mr-data');
+const hoyHoyDir               = home.cwd('hoy-hoy');
+const mrDataPakkage           = jetpackFile(mrDataDir, 'package.json');
+const hoyHoyPakkage           = jetpackFile(hoyHoyDir, 'package.json');
 
 const mainish = exports.main = function(argv = {}) {
+  var playground  = {};
+  var self        = new Amigo();
+
+  var amigos      = self.amigos     = {amigo: self};
+
   const main = async function() {
     return new Promise(async function(resolve, reject) {
       // I aint never gonna resolve that Promise :)
 
-      var playground  = {};
-      var self        = new Amigo();
-
       // Go around and load all the package.json files
-      var   neighborhood_ = await home.listAsync();
+      const pkgs = await loadPakkages();
 
-      self.hood = {};
-      for (var i = 0; i < neighborhood_.length; ++i) {
-        const item = neighborhood_[i];
+      async function loadPakkages() {
 
-        if (await jetpack.existsAsync(item) === 'dir') {
+        await loadPakkage(mrDataPakkage);
+        await loadPakkage(hoyHoyPakkage);
 
-          const pkgJsonFilename = jetpack.path(item, 'package.json');
-          if (await jetpack.existsAsync(pkgJsonFilename) === 'file') {
+        async function loadPakkage(pakkageFile) {
+          if (await pakkageFile.existsAsync() === 'file') {
 
-            const house         = require(jetpack.path(item));
-            const neighbor      = new house.Hello(self, playground);
-            const name          = neighbor.name;
+            const dirpath     = pakkageFile.dirpath;
+            // console.log(`mrData package: ${pakkageFile.fullpath}`, {dirpath});
 
-            self.hood[name]     = neighbor;
+            const house       = require(dirpath);
+            const neighbor    = new house.Hello(amigos, playground);
+
+            self.amigos[neighbor.name]  = neighbor;
+
+            return neighbor;
           }
         }
       }
 
+
       return sg.until(function(again, last, count, elapsed) {
         //console.log({count, elapsed});
+
+        // console.log({self});
 
         if (count < 30) {
           return again(500);

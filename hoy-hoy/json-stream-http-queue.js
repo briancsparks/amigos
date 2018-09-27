@@ -42,7 +42,7 @@ exports.startJsonStreamServer = function(argv, context, callback) {
 
         // Data is waiting for us -- just send it back to the request
 
-        console.log(`Request data from queue: ${streamName}. ${pipeState.length} data items are waiting.`);
+        // console.log(`Request data from queue: ${streamName}. ${pipeState.length} data items are waiting.`);
 
         // We have data to respond with... use it
         res.writeHead(200, { 'Content-Type': 'application/json'});
@@ -63,7 +63,7 @@ exports.startJsonStreamServer = function(argv, context, callback) {
 
         // Someone is already listening... kick them off
         pipeState.res.writeHead(200, { 'Content-Type': 'application/json'});
-        pipeState.res.write(JSON.stringify(pipeState));
+        pipeState.res.write(JSON.stringify([]));
         pipeState.res.end();
 
         // Put ourselves as the listener
@@ -72,7 +72,7 @@ exports.startJsonStreamServer = function(argv, context, callback) {
 
       } else {
 
-        console.log(`No handler or data; setting myself up as the queuedatahandler for ${streamName}`);
+        // console.log(`No handler or data; setting myself up as the queuedatahandler for ${streamName}`);
 
         // Just set ourselves as the current listener
         data[streamName] = {req, res};
@@ -101,13 +101,13 @@ exports.streamJson = function(argv, context, callback) {
 
   if (_.isArray(pipeState)) {
 
-    console.log(`Adding data to queue ${streamName}`);
+    // console.log(`Adding data to queue ${streamName}`);
 
     data[streamName] = [...(data[streamName] || []), ...(items || [])];
 
   } else if (pipeState.res) {
 
-    console.log(`sending data to an alredy-waiting request${streamName}`);
+    // console.log(`sending data to an alredy-waiting request${streamName}`);
 
     // We have data to respond with, and a waiting request... use it
     const countSent = items.length;
@@ -122,7 +122,7 @@ exports.streamJson = function(argv, context, callback) {
     return callback(null, {done:true, countSent});
 
   } else {
-    console.error(`Error: Want to streamJson outbound, but cant tell`);
+    // console.error(`Error: Want to streamJson outbound, but cant tell`);
   }
 
 };

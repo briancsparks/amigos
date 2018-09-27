@@ -8,8 +8,6 @@ const _                       = sg._;
 const http                    = require('http');
 const urlLib                  = require('url');
 const jsonQueue               = require('./json-stream-http-queue');
-// const {
-//   streamJson }                  = jsonQueue;
 
 
 var lib = {};
@@ -21,7 +19,7 @@ var lib = {};
  */
 const streamJson = function(streamName, data, callback) {
 
-  console.log(`Sending streamJson to the ${streamName} event queue`);
+  // console.log(`Sending streamJson to the ${streamName} event queue`);
   return jsonQueue.streamJson({streamName, data}, {}, function(err, receipt) {
     // The json sender response
 
@@ -50,7 +48,7 @@ exports.listen = function(amigos, playground, callback) {
       const query       = url.query;
       const bodyJson    = req.bodyJson || {};
 
-      console.log(`Main JSON listener:`, {query, bodyJson});
+      // console.log(`Main JSON listener:`, {query, bodyJson});
 
       // Build an object that has oll of the data
       const all   = _.extend({}, bodyJson || {}, query);
@@ -65,8 +63,6 @@ exports.listen = function(amigos, playground, callback) {
 
       // The responding fn
       function respond(err, data) {
-        console.log(`hoyhoy respond`, {err, data});
-
         res.writeHead(200, { 'Content-Type': 'application/json'});
         res.write(JSON.stringify(data));
         res.end();
@@ -80,17 +76,13 @@ exports.listen = function(amigos, playground, callback) {
   server.listen(jsonPort, () => {
     console.log(`The main server is listening for JSON at ${jsonPort}`);
     result.main.port = jsonPort;
-    return callback(null, {port: jsonPort});
   });
 
 
   jsonQueue.startJsonStreamServer({port: 7799}, {}, function(err, startConf) {
     result.stream.port = startConf.port;
-    console.log(`Started json stgream ${startConf.port}`, {startConf});
+    console.log(`Started json stream ${startConf.port}`, {startConf});
   });
-
-  function listenDone(err, result) {
-  }
 
 };
 

@@ -14,7 +14,6 @@ exports.Hello = function(amigos, playground) {
   self.ingest = function(data, callback) {
     const { all, body, query, pathname } = data;
 
-    console.log(`Ingeting data -- Mr. Data`);
     return callback(null, {data});
   };
 };

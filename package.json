@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "express": "^4.17.1",
-    "sg-argv": "^1.0.40"
+    "sg-argv": "^1.0.40",
+    "socket.io": "^2.2.0"
   }
 }

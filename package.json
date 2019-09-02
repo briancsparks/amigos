@@ -1,5 +1,5 @@
 {
-  "name": "amigo",
+  "name": "@sg0-ex/amigo",
   "version": "1.0.0",
   "description": "Best pal",
   "main": "index.js",
@@ -9,7 +9,7 @@
   "author": "BCS",
   "license": "MIT",
   "dependencies": {
-    "fs-jetpack": "^2.1.0",
-    "sgsg": "^0.9.56"
+    "express": "^4.17.1",
+    "sg-argv": "^1.0.40"
   }
 }

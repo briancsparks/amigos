@@ -10,22 +10,30 @@ const server                  = require('http').createServer(app);
 const io                      = require('socket.io')(server);
 
 const ARGV                    = sg.ARGV();
-const port                    = ARGV.port     | 3000;
+const port                    = ARGV.port     || 3333;
 
 app.get('/', (req, res) => {
   res.sendFile(`${__dirname}/index.html`);
 });
 
-io.on('connection', (socket) => {
-  console.log(`a user connected`);
+var nextId  = 0;
+var count   = 0;
 
-  socket.on('chat message', function(msg){
-    console.log('message: ' + msg);
-    io.emit(`chat message`, msg);
+io.on('connection', (socket) => {
+  const id    = nextId++;
+  const name  = `user${id}`;
+
+  console.log(`connection from ${name}`, {name, connected:true});
+  io.emit('data', {from: name}, {name, connected:true});
+
+  socket.on('data', function(data){
+    console.log(`data from ${name}`, data);
+    io.emit(`data`, {from: name}, data);
   });
 
   socket.on('disconnect', function(){
-    console.log('user disconnected');
+    console.log(`disconnection from ${name}`, {name, connected:false});
+    io.emit('data', {from: name}, {name, connected:false});
   });
 });
 

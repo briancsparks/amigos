@@ -9,7 +9,7 @@
   "author": "BCS",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.18.2",
     "sg-argv": "^1.0.40",
     "socket.io": "^2.2.0",
     "socket.io-client": "^2.2.0"
